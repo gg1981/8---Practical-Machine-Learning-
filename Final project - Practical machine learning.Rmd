@@ -1,0 +1,85 @@
+---
+title: "Practical Machine Learning - Final Project"
+author: "Luigi Pistis"
+date: "15 giugno 2016"
+output: html_document
+---
+
+#Prediction Assignment Writeupless 
+
+##Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r}
+# load the library
+library(caret)
+# load the data
+train<- read.csv("~/Downloads/pml-training.csv", header=TRUE)
+test <- read.csv("~/Downloads/pml-testing.csv", header=TRUE)
+```
+
+Then partition the train dataset.
+```{r, echo=FALSE}
+set. seed(7)
+inTrain <- createDataPartition(train$classe, p = .75, list=FALSE)
+
+myTraining <- train[inTrain, ]
+myTesting <- train[-inTrain, ]
+dim(myTraining); dim(myTesting)
+```
+
+
+Now we can remove the near zero variance variables. Note that I work only on the dataset "myTraining" and just remove the same columns in the other one. Furthermore I like to keep track of the changes so I put a number in the dataset name after every change.
+
+```{r}
+nzv <- nearZeroVar(myTraining, saveMetrics=TRUE)
+myTraining1 <- myTraining[,nzv$nzv==FALSE]
+
+myTesting1 <- myTesting[,nzv$nzv==FALSE]
+myTest1<-test[,nzv$nzv==FALSE]
+```
+
+This datasets contain lots of NA so we remove the column where almost all the rows has NA as value.
+
+```{r}
+NAind<-apply(myTraining1,2,function(x) {sum(is.na(x))})
+length(which(NAind==0)) #variables with no NAs 
+myTraining2 <- myTraining1[,which(NAind == 0)]
+myTesting2<-myTesting1[,which(NAind==0)]
+myTest2<-myTest1[,which(NAind==0)]
+
+#tolgo le prime 5 colonne
+myTraining3<-myTraining2[,-c(1:5)]
+myTesting3<-myTesting2[,-c(1:5)]
+myTest3<-myTest2[,-c(1:5)]
+```
+
+I use random forest model.
+```{r}
+#fit <- train(classe ~., method="rf", data=myTraining2, trControl=trainControl(method='cv'))
+ctrlKNN = trainControl(method = "adaptive_cv")
+modelKNN = train(classe ~ ., myTraining2, method = "knn", trControl = ctrlKNN)
+
+modFitA1 <- rpart(classe ~ ., data=myTraining3, method="class")
+
+fit <- predict(modFitA1, myTesting3)
+fit <- predict(modelKNN, myTesting2)
+```
+
+Finally we can predict on the test dataset.
+```{r}
+mytest<-test[,c(setdiff(names(myTraining2),"classe"))]
+preds <- predict(fit, newdata=mytest)
+```
+
