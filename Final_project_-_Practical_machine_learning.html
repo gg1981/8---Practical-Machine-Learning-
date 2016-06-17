@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
-<meta name="author" content="Luigi Pistis" />
+<meta name="author" content="Luigi" />
 
 
 <title>Practical Machine Learning - Final Project</title>
@@ -53,8 +53,8 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <div id="header">
 <h1 class="title">Practical Machine Learning - Final Project</h1>
-<h4 class="author"><em>Luigi Pistis</em></h4>
-<h4 class="date"><em>15 giugno 2016</em></h4>
+<h4 class="author"><em>Luigi</em></h4>
+<h4 class="date"><em>17th June 2016</em></h4>
 </div>
 
 
@@ -114,7 +114,7 @@ myTest2&lt;-myTest1[,which(NAind==0)]
 myTraining3&lt;-myTraining2[,-c(1:5)]
 myTesting3&lt;-myTesting2[,-c(1:5)]
 myTest3&lt;-myTest2[,-c(1:5)]</code></pre>
-<p>Now we train the model, after some test I decided to use random forest.</p>
+<p>Now we train the model, after some tests I decided to use random forest.</p>
 <pre class="r"><code>fit &lt;- randomForest(classe ~. , data=myTraining3)
 #predict on myTesting
 predictionsB1 &lt;- predict(fit, myTesting3, type = &quot;class&quot;)

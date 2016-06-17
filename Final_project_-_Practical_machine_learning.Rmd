@@ -1,8 +1,8 @@
 ---
 title: "Practical Machine Learning - Final Project"
-author: "Luigi Pistis"
-date: "15 giugno 2016"
-output: pdf_document
+author: "Luigi"
+date: "17th June 2016"
+output: html_document
 ---
 
 #Prediction Assignment Writeupless 
