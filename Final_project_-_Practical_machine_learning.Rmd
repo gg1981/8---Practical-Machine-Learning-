@@ -2,7 +2,7 @@
 title: "Practical Machine Learning - Final Project"
 author: "Luigi Pistis"
 date: "15 giugno 2016"
-output: html_document
+output: pdf_document
 ---
 
 #Prediction Assignment Writeupless 
@@ -22,64 +22,88 @@ The test data are available here:
 https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 
 ```{r}
-# load the library
+# load the libraries
 library(caret)
+library(randomForest)
 # load the data
 train<- read.csv("~/Downloads/pml-training.csv", header=TRUE)
 test <- read.csv("~/Downloads/pml-testing.csv", header=TRUE)
 ```
 
-Then partition the train dataset.
-```{r, echo=FALSE}
-set. seed(7)
+Then we partition the train dataset.
+```{r}
+set.seed(7)
 inTrain <- createDataPartition(train$classe, p = .75, list=FALSE)
-
 myTraining <- train[inTrain, ]
 myTesting <- train[-inTrain, ]
+#check dimensions
 dim(myTraining); dim(myTesting)
 ```
 
+Note that the original "train" and "test" datasets differs only by the columns "classe" (present only in "train") and "problem_id" (present only in "test").
+Furthermore since I like to keep track of the changes, I put a number in the dataset names after every change.
 
-Now we can remove the near zero variance variables. Note that I work only on the dataset "myTraining" and just remove the same columns in the other one. Furthermore I like to keep track of the changes so I put a number in the dataset name after every change.
+Note also that I work only on the dataset "myTraining" and just remove the same columns in the other one.
 
+Next step we can remove the near zero variance variables. 
 ```{r}
+#calculate near zero variance variables
 nzv <- nearZeroVar(myTraining, saveMetrics=TRUE)
+#remove relative variables in all datasets
 myTraining1 <- myTraining[,nzv$nzv==FALSE]
-
 myTesting1 <- myTesting[,nzv$nzv==FALSE]
 myTest1<-test[,nzv$nzv==FALSE]
 ```
 
+
 This datasets contain lots of NA so we remove the column where almost all the rows has NA as value.
 
 ```{r}
+#sum of na by columns
 NAind<-apply(myTraining1,2,function(x) {sum(is.na(x))})
-length(which(NAind==0)) #variables with no NAs 
+length(which(NAind==0)) #variables with no NAs: 59
+
 myTraining2 <- myTraining1[,which(NAind == 0)]
 myTesting2<-myTesting1[,which(NAind==0)]
 myTest2<-myTest1[,which(NAind==0)]
 
-#tolgo le prime 5 colonne
+#I decided to remove also the first 5 columns since they have no useful data(e.g. name)
 myTraining3<-myTraining2[,-c(1:5)]
 myTesting3<-myTesting2[,-c(1:5)]
 myTest3<-myTest2[,-c(1:5)]
 ```
 
-I use random forest model.
-```{r}
+Now we train the model, after some tests I decided to use random forest.
+```{r, echo=FALSE,eval=FALSE}
 #fit <- train(classe ~., method="rf", data=myTraining2, trControl=trainControl(method='cv'))
-ctrlKNN = trainControl(method = "adaptive_cv")
-modelKNN = train(classe ~ ., myTraining2, method = "knn", trControl = ctrlKNN)
+modelKNN <- train(classe ~ ., myTraining3, method = "knn", trainControl(method = "adaptive_cv") )
+fit <- predict(modelKNN, myTesting3)
 
+
+library(rpart)
 modFitA1 <- rpart(classe ~ ., data=myTraining3, method="class")
-
 fit <- predict(modFitA1, myTesting3)
-fit <- predict(modelKNN, myTesting2)
+predictionsA1 <- predict(modFitA1, myTesting, type = "class")
+cmtree <- confusionMatrix(predictionsA1, myTesting$classe)
+preds <- predict(modFitA1, newdata=myTest3)
+``` 
+
+
+```{r,cache=TRUE}
+fit <- randomForest(classe ~. , data=myTraining3)
+#predict on myTesting
+predictionsB1 <- predict(fit, myTesting3, type = "class")
+#check the results
+confusionMatrix(predictionsB1, myTesting$classe)
 ```
 
-Finally we can predict on the test dataset.
+From the confusion matrix we have a good result with 99% accuracy, thus we can finally predict on the test dataset.
 ```{r}
 mytest<-test[,c(setdiff(names(myTraining2),"classe"))]
-preds <- predict(fit, newdata=mytest)
+pred<-predict(fit,myTest3)
 ```
 
+The prediction are 
+```{r}
+pred
+```
